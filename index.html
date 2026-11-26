@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Walking Red Flag Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #12060a;
+  --panel: #1b0a10;
+  --ink: #f6e9d8;
+  --dim: #a8878a;
+  --red: #ff3b4e;
+  --ok: #7dffb2;
+  --line: #4a1c26;
+  --font: "VT323", "Courier New", ui-monospace, monospace;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 22px;
+  line-height: 1.3;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+.term {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--red);
+  background: var(--panel);
+  box-shadow: 0 0 28px rgba(255, 59, 78, .28);
+  position: relative;
+  overflow: hidden;
+}
+.term::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+}
+.bar {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 6px 14px;
+  background: var(--red);
+  color: #12060a;
+}
+#out { flex: 1; padding: 14px; overflow-wrap: anywhere; }
+#out p { margin: 0 0 6px; white-space: pre-wrap; }
+.flag { color: var(--red); line-height: 1.05; margin-bottom: 10px; font-size: 26px; }
+.title { color: var(--red); font-size: 34px; }
+.dim { color: var(--dim); }
+.echo { color: var(--dim); }
+.ok { color: var(--ok); }
+.bad { color: var(--red); }
+.q { color: var(--ink); font-size: 26px; margin-top: 4px; }
+.tag { color: var(--red); margin-top: 14px; }
+.score { font-size: 32px; color: var(--ok); margin-top: 10px; }
+form { display: flex; align-items: center; gap: 8px; padding: 0 14px 14px; }
+form[hidden], #opts[hidden] { display: none; }
+.ps { color: var(--red); }
+input {
+  flex: 1; min-width: 0;
+  background: transparent; border: 0; border-bottom: 2px solid var(--line);
+  color: var(--ink); font: inherit; font-size: 22px;
+  padding: 4px 2px; outline: none; caret-color: var(--red);
+}
+input:focus { border-bottom-color: var(--red); }
+#opts { display: grid; gap: 8px; padding: 0 14px 14px; }
+button {
+  font: inherit; text-align: left; cursor: pointer;
+  color: var(--ink); background: transparent;
+  border: 2px solid var(--line); padding: 8px 12px;
+}
+button:hover { border-color: var(--red); color: var(--red); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+button.go { border-color: var(--red); color: var(--red); text-align: center; }
+button.go:hover { background: var(--red); color: #12060a; }
+.cursor::after { content: "\2588"; color: var(--red); animation: blink 1s steps(2) infinite; margin-left: 4px; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cursor::after { animation: none; } }
+@media (max-width: 480px) { body { font-size: 20px; padding: 8px; } .flag { font-size: 20px; } .title { font-size: 28px; } .q { font-size: 23px; } }
+</style>
+</head>
+<body>
+<main class="term">
+  <div class="bar"><span>redflag.exe</span><span id="stat">score 0/9</span></div>
+  <div id="out" aria-live="polite"></div>
+  <form id="f" hidden autocomplete="off">
+    <span class="ps">&gt;</span>
+    <input id="in" type="text" aria-label="Your answer" enterkeyhint="send" autocapitalize="words" maxlength="40">
+  </form>
+  <div id="opts" hidden></div>
+</main>
+<script>
+(function () {
+  var questions = [
+    "Who dated a man who secretly lived a separate life?",
+    "Who dated a man who hated blondes (rubias)?",
+    "Who met a guy with a weenie (pollo pero con a), smaller than a thumb?",
+    "This aZZ hole dumped who at a stand up show?",
+    "Who met a guy with a taste for feet?",
+    "This girl got dumped and/or cheated on for another woman on the other side of the world 2 times:",
+    "Who dated a man who turned into an obsessive stalker when given 100 chances to get well?",
+    "Who dated a man with knifes hidden under the bed?",
+    "Who dated a man who 3D-printed spiderman masks for a living?"
+  ];
+  var correct = [3, 1, 2, 1, 3, 3, 2, 2, 3];
+  var options = [
+    ["Moa", "Andrea", "Kassie"],
+    ["Moa", "Sandra", "Ellen"],
+    ["Patricia", "Andrea", "Moa"],
+    ["Patricia", "Isabel", "Kassie"],
+    ["Mamen", "Moa", "Sandra"],
+    ["Kassie", "Ellen", "Moa"],
+    ["Andrea", "Sandra", "Ellen"],
+    ["Mamen", "Moa", "Ellen"],
+    ["Kassie", "Patricia", "Ellen"]
+  ];
+  var good = [
+    "CORRECT! A double life? Even Batman wasn’t this committed.",
+    "YES! Blondephobia is real and apparently so is bad taste in men.",
+    "CORRECT! The evidence was small, but the trauma was HUGE.",
+    "THAT’S RIGHT! Imagine paying for a comedy show just to become the joke.",
+    "CORRECT! Some people have foot fetishes. Others have standards. Apparently not him.",
+    "YES! Twice?! At this point it’s international business.",
+    "CORRECT! Girl, you survived a whole psychological thriller.",
+    "THAT’S RIGHT! Knives under the bed? That’s not a red flag, that’s a crime documentary.",
+    "CORRECT! Spiderman could never save this man’s reputation."
+  ];
+  var bad = [
+    "JAIL! For him and you. How do you not know this?",
+    "WRONG! The blonde community is disappointed in you.",
+    "GIRL, THE EVIDENCE WAS RIGHT THERE. THINK SMALL.",
+    "EMBARRASSING! You really missed the plot twist?",
+    "WRONG! Keep your feet on the ground and your standards higher.",
+    "TWO TIMES! TWO CONTINENTS! AND YOU STILL GOT IT WRONG?",
+    "JAIL! You clearly weren’t following the investigation.",
+    "WRONG! There were literally KNIVES involved. WAKE UP.",
+    "NOT THE SPIDERMAN MASKS! Even Peter Parker knows this one."
+  ];
+
+  var out = document.getElementById("out");
+  var form = document.getElementById("f");
+  var input = document.getElementById("in");
+  var opts = document.getElementById("opts");
+  var stat = document.getElementById("stat");
+  var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var score = 0, name = "", onKey = null, onText = null;
+
+  function line(text, cls) {
+    var p = document.createElement("p");
+    if (cls) p.className = cls;
+    p.textContent = text;
+    out.appendChild(p);
+    window.scrollTo(0, document.body.scrollHeight);
+    return p;
+  }
+  function clearUI() { form.hidden = true; opts.hidden = true; opts.innerHTML = ""; onKey = null; onText = null; }
+  function button(label, fn, cls) {
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = label;
+    if (cls) b.className = cls;
+    b.addEventListener("click", fn);
+    opts.appendChild(b);
+    return b;
+  }
+  function setStat() { stat.textContent = "score " + score + "/" + questions.length; }
+
+  function sequence(items, done) {
+    var i = 0;
+    (function next() {
+      if (i >= items.length) { done(); return; }
+      var it = items[i++];
+      line(it[0], it[1]);
+      if (calm) next(); else setTimeout(next, 420);
+    })();
+  }
+
+  function ask(prompt, handler) {
+    line(prompt, "dim");
+    form.hidden = false;
+    input.value = "";
+    onText = handler;
+    input.focus();
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!onText) return;
+    var v = input.value.trim();
+    var h = onText;
+    clearUI();
+    line("> " + v, "echo");
+    h(v);
+  });
+
+  function start() {
+    clearUI(); out.innerHTML = ""; score = 0; setStat();
+    var flag = document.createElement("p");
+    flag.className = "flag";
+    flag.textContent = "  |\u25B6\u25B6\u25B6\u25B6\u25B6\u25B6\n  |\u25B6\u25B6\u25B6\u25B6\u25B6\u25B6\u25B6\u25B6\n  |\u25B6\u25B6\u25B6\u25B6\u25B6\u25B6\n  |\n  |";
+    out.appendChild(flag);
+    sequence([
+      ["THE WALKING RED FLAG QUIZ", "title"],
+      ["Welcome my friends with the worst taste in men,", ""],
+      ["not to mention women...", ""],
+      ["Today we are guessing who knows them all!", ""]
+    ], function () {
+      ask("Type your name:", function (n) {
+        name = n || "Anonymous";
+        line("Welcome to the quiz, " + name + "!");
+        ask("Are you ready to play? Type yes.", function (r) {
+          if (r.toLowerCase() === "yes") {
+            line("Lets start then!", "ok");
+            question(0);
+          } else {
+            line("Byeeeeee Felicia", "bad");
+            opts.hidden = false;
+            button("Try again", start, "go").focus();
+          }
+        });
+      });
+    });
+  }
+
+  function question(i) {
+    clearUI();
+    line("LAB RAT " + String(i + 1).padStart(3, "0"), "tag");
+    line(questions[i], "q");
+    opts.hidden = false;
+    options[i].forEach(function (o, j) {
+      button((j + 1) + ". " + o, function () { answer(i, j + 1); });
+    });
+    onKey = function (k) { var n = parseInt(k, 10); if (n >= 1 && n <= options[i].length) answer(i, n); };
+  }
+
+  function answer(i, n) {
+    clearUI();
+    line("> " + n + ". " + options[i][n - 1], "echo");
+    if (n === correct[i]) { score++; setStat(); line(good[i], "ok"); }
+    else { line(bad[i], "bad"); }
+    opts.hidden = false;
+    var last = i === questions.length - 1;
+    var b = button(last ? "See my score" : "Next", function () { last ? finish() : question(i + 1); }, "go");
+    b.focus();
+    onKey = function (k) { if (k === "Enter") { last ? finish() : question(i + 1); } };
+  }
+
+  function finish() {
+    clearUI();
+    line("ZOOOORRAS you made it my ragatas, lets all live celibate!", "tag");
+    line(name + ", your score is: " + score + "/" + questions.length, "score");
+    opts.hidden = false;
+    button("Play again", start, "go").focus();
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (onKey && document.activeElement !== input) onKey(e.key);
+  });
+
+  start();
+})();
+</script>
+</body>
+</html>
